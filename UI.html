@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Life OS</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #E8A0BF;
+      --primary-light: #FFF0F5;
+      --primary-dark: #957DAD;
+      --primary-on: #FFFFFF;
+      --text-main: #2D3B36;
+      --text-sub: #7A9490;
+      --bg: #fafafa;
+      --bg-card: #FFFFFF;
+      --accent: #957DAD;
+      --accent-red: #FC8A8A;
+      --accent-yellow: #FDD260;
+      --border: #F0D6E4;
+      --muted: #7A9490;
+      --radius-card: 20px;
+      --radius-btn: 14px;
+      --radius-chip: 20px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.04);
+      --max-w: 480px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      font-size: 15px;
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .section { animation: fade-up 0.4s ease-out; }
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    button:active { transform: scale(0.97); }
+
+    .app-wrapper {
+      max-width: var(--max-w);
+      margin: 0 auto;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      padding-bottom: 72px;
+    }
+
+    /* Input area */
+    .input-area {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .row { display: flex; gap: 8px; align-items: center; }
+
+    input[type="datetime-local"],
+    input[type="date"],
+    input[type="text"],
+    textarea {
+      font-family: inherit;
+      font-size: 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-btn);
+      padding: 8px 12px;
+      background: var(--primary-light);
+      color: var(--text-main);
+      outline: none;
+      width: 100%;
+      transition: border-color 0.15s;
+    }
+    input:focus, textarea:focus { border-color: var(--primary); }
+    input[type="datetime-local"] { flex: 1; }
+
+    .btn-now {
+      padding: 8px 14px;
+      background: var(--primary);
+      color: var(--primary-on);
+      border: none;
+      border-radius: var(--radius-btn);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+    .btn-now:active { background: var(--primary-dark); }
+
+    .mode-toggle { display: flex; gap: 8px; }
+    .mode-btn {
+      flex: 1;
+      padding: 10px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-btn);
+      background: var(--bg);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-sub);
+      transition: all 0.15s;
+    }
+    .mode-btn.active, .mode-btn.todo-active {
+      border-color: var(--primary-dark);
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      font-weight: 600;
+    }
+
+    .text-input-row { position: relative; display: flex; gap: 8px; align-items: flex-start; }
+    #textInput {
+      resize: vertical;
+      font-family: inherit;
+      font-size: 14px;
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 12px;
+      min-height: 40px;
+    }
+
+    .btn-voice {
+      width: 40px;
+      height: 40px;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      background: var(--bg-card);
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+    .btn-voice.recording {
+      background: var(--accent-red);
+      border-color: var(--accent-red);
+      animation: pulse 1s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    /* Tag */
+    .tag-area { display: flex; flex-direction: column; gap: 6px; }
+    .tag-row { position: relative; }
+    .tag-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      max-height: 150px;
+      overflow-y: auto;
+      z-index: 10;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .tag-dropdown-item {
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .tag-dropdown-item:hover { background: var(--primary-light); }
+    .tag-suggestions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tag-chip {
+      padding: 4px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-chip);
+      background: var(--bg-card);
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--text-sub);
+      transition: all 0.15s;
+    }
+    .tag-chip:hover { border-color: var(--primary); color: var(--primary-dark); }
+
+    /* Mood */
+    .mood-row { display: flex; align-items: center; gap: 8px; }
+    .mood-label { font-size: 13px; color: var(--text-sub); white-space: nowrap; }
+    .mood-btns { display: flex; gap: 4px; flex: 1; }
+    .mood-btn {
+      flex: 1;
+      padding: 6px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg-card);
+      cursor: pointer;
+      font-size: 18px;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .mood-btn.selected {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      transform: scale(1.1);
+    }
+
+    /* Todo options */
+    .todo-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .todo-options input[type="date"] { flex: 1; min-width: 120px; }
+    .priority-btns { display: flex; gap: 4px; }
+    .priority-btn {
+      padding: 6px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg-card);
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.15s;
+    }
+    .priority-btn.selected {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      font-weight: 600;
+    }
+
+    /* Submit */
+    .btn-submit {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: var(--radius-btn);
+      background: var(--primary);
+      color: var(--primary-on);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      min-height: 44px;
+      transition: background 0.2s;
+    }
+    .btn-submit:active { background: var(--primary-dark); }
+    .btn-submit.todo-mode { background: var(--primary-dark); }
+    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Dashboard */
+    .dashboard { padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; }
+
+    .daily-summary-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+    .pia-comment { display: flex; align-items: center; gap: 10px; }
+    .pia-bubble {
+      background: var(--primary-light);
+      border-radius: 12px;
+      padding: 8px 12px;
+      font-size: 13px;
+      color: var(--text-main);
+      position: relative;
+    }
+    .pia-icon-emoji { font-size: 28px; flex-shrink: 0; }
+
+    .section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .section-header {
+      padding: 12px 14px;
+      font-size: 14px;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-body { padding: 8px 14px; }
+
+    .empty-state {
+      text-align: center;
+      padding: 20px;
+      color: var(--text-sub);
+      font-size: 13px;
+    }
+    .empty-msg {
+      text-align: center;
+      padding: 12px;
+      color: var(--text-sub);
+      font-size: 13px;
+    }
+
+    /* Entry items */
+    .entry-item {
+      display: flex;
+      gap: 8px;
+      padding: 10px 14px;
+      border-bottom: 1px solid #f0f0f0;
+      align-items: flex-start;
+    }
+    .entry-item:last-child { border-bottom: none; }
+    .entry-time { font-size: 12px; color: var(--muted); white-space: nowrap; padding-top: 2px; }
+    .entry-mood { font-size: 16px; flex-shrink: 0; }
+    .entry-content { flex: 1; min-width: 0; }
+    .entry-tag { font-size: 11px; color: var(--accent); margin-bottom: 2px; }
+    .entry-text { font-size: 13px; word-break: break-word; }
+
+    /* Todo items */
+    .todo-item {
+      display: flex;
+      gap: 8px;
+      padding: 10px 14px;
+      border-bottom: 1px solid #f0f0f0;
+      align-items: center;
+    }
+    .todo-item:last-child { border-bottom: none; }
+    .todo-item.overdue-item { border-left: 3px solid var(--accent-red); }
+    .todo-check {
+      width: 22px;
+      height: 22px;
+      border: 2px solid var(--border);
+      border-radius: 50%;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+    .todo-check:hover { border-color: var(--primary); background: var(--primary-light); }
+    .todo-content { flex: 1; cursor: pointer; min-width: 0; }
+    .todo-text { font-size: 13px; word-break: break-word; }
+    .todo-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .todo-meta.overdue { color: #c53030; }
+    .priority-badge {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .priority-badge.high { background: #fee; color: #c53030; }
+    .priority-badge.mid { background: #fff8e1; color: #b8860b; }
+    .priority-badge.low { background: #e8f4fd; color: #2b6cb0; }
+    .priority-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .priority-badge.high .priority-dot { background: #c53030; }
+    .priority-badge.mid .priority-dot { background: #b8860b; }
+    .priority-badge.low .priority-dot { background: #2b6cb0; }
+    .edit-btn {
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 4px;
+      opacity: 0.5;
+    }
+    .edit-btn:hover { opacity: 1; }
+
+    /* Done items */
+    .done-item {
+      display: flex;
+      gap: 8px;
+      padding: 8px 14px;
+      align-items: center;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .done-item:last-child { border-bottom: none; }
+    .done-check { font-size: 14px; }
+    .done-text { flex: 1; font-size: 13px; color: var(--muted); text-decoration: line-through; }
+    .reopen-btn {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      cursor: pointer;
+      font-size: 12px;
+      padding: 2px 8px;
+    }
+
+    /* Streak */
+    .streak-grid {
+      display: flex;
+      gap: 3px;
+      padding: 12px 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .streak-cell {
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
+      background: #f0f0f0;
+    }
+    .streak-cell.has-entry { background: var(--primary); }
+
+    /* Calendar events */
+    .cal-event {
+      display: flex;
+      gap: 8px;
+      padding: 8px 14px;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 13px;
+      align-items: flex-start;
+    }
+    .cal-event:last-child { border-bottom: none; }
+    .cal-time { font-size: 12px; color: var(--muted); white-space: nowrap; min-width: 40px; }
+    .cal-title { flex: 1; }
+    .cal-date-label {
+      font-size: 11px;
+      color: var(--primary-dark);
+      font-weight: 600;
+      padding: 6px 14px 2px;
+    }
+
+    /* Lookback */
+    .lookback-item {
+      padding: 8px 14px;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 13px;
+    }
+    .lookback-item:last-child { border-bottom: none; }
+    .lookback-date { font-size: 11px; color: var(--muted); }
+
+    /* Tab bar */
+    .tab-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      z-index: 200;
+      max-width: var(--max-w);
+      margin: 0 auto;
+      padding: 6px 0;
+    }
+    .tab-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-decoration: none;
+      color: var(--text-sub);
+      font-size: 10px;
+      padding: 4px 12px;
+      gap: 2px;
+      transition: color 0.15s;
+    }
+    .tab-item.active { color: var(--primary-dark); }
+    .tab-icon { display: flex; }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #333;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 13px;
+      opacity: 0;
+      transition: all 0.3s;
+      z-index: 999;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Spreadsheet link */
+    .sheet-link {
+      display: block;
+      text-align: center;
+      padding: 12px;
+      font-size: 12px;
+      color: var(--muted);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+
+  <!-- 入力エリア -->
+  <div class="input-area">
+    <div class="row">
+      <input type="datetime-local" id="datetimeInput">
+      <button class="btn-now" onclick="setNow()">今</button>
+    </div>
+
+    <div class="text-input-row">
+      <textarea id="textInput" placeholder="メモを入力…（改行OK）" autocomplete="off" autofocus rows="2"></textarea>
+      <button class="btn-voice" id="voiceBtn" onclick="toggleVoice()" title="音声入力">🎤</button>
+    </div>
+
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="diaryBtn" onclick="setMode('diary')">📝 日記</button>
+      <button class="mode-btn" id="todoBtn" onclick="setMode('todo')">☑ ToDo</button>
+    </div>
+
+    <div class="tag-area">
+      <div class="tag-row">
+        <input type="text" id="tagInput" placeholder="タグ（任意）" autocomplete="off" oninput="onTagInput()">
+        <div id="tagDropdown" class="tag-dropdown" style="display:none;"></div>
+      </div>
+      <div class="tag-suggestions" id="tagSuggestions"></div>
+    </div>
+
+    <div class="mood-row" id="moodRow">
+      <span class="mood-label">気分:</span>
+      <div class="mood-btns">
+        <button class="mood-btn" data-mood="1" onclick="selectMood(1)">😢</button>
+        <button class="mood-btn" data-mood="2" onclick="selectMood(2)">😞</button>
+        <button class="mood-btn" data-mood="3" onclick="selectMood(3)">😐</button>
+        <button class="mood-btn" data-mood="4" onclick="selectMood(4)">🙂</button>
+        <button class="mood-btn" data-mood="5" onclick="selectMood(5)">😊</button>
+        <button class="mood-btn" data-mood="6" onclick="selectMood(6)">🤩</button>
+      </div>
+    </div>
+
+    <div class="todo-options" id="todoOptions" style="display:none;">
+      <input type="date" id="dueDate" title="期限日">
+      <div class="priority-btns">
+        <button class="priority-btn" data-priority="high" onclick="selectPriority('high')">🔴 高</button>
+        <button class="priority-btn selected" data-priority="mid" onclick="selectPriority('mid')">🟡 普通</button>
+        <button class="priority-btn" data-priority="low" onclick="selectPriority('low')">🔵 低</button>
+      </div>
+    </div>
+
+    <button class="btn-submit" id="submitBtn" onclick="submit()">記録する</button>
+  </div>
+
+  <!-- ダッシュボード -->
+  <div class="dashboard" id="dashboard">
+    <div id="dailySummaryCard" class="daily-summary-card" style="display:none;"></div>
+
+    <div class="section" id="sectionCalendar" style="display:none;">
+      <div class="section-header">📅 今日の予定</div>
+      <div class="section-body" id="calendarList"></div>
+    </div>
+
+    <div class="section" id="sectionToday">
+      <div class="section-header">📝 今日の記録 <span id="todayCount" style="color:var(--muted);font-weight:400;font-size:12px;"></span></div>
+      <div class="section-body" id="todayList"><div class="loading"><span class="spinner"></span> 読み込み中…</div></div>
+    </div>
+
+    <div class="section" id="sectionTodo">
+      <div class="section-header">☑ やること <span id="todoCount" style="color:var(--muted);font-weight:400;font-size:12px;"></span></div>
+      <div class="section-body" id="todoList"><div class="loading"><span class="spinner"></span> 読み込み中…</div></div>
+    </div>
+
+    <div class="section" id="sectionDone">
+      <div class="section-header">✅ 最近の完了</div>
+      <div class="section-body" id="doneList"></div>
+    </div>
+
+    <div class="section" id="sectionLookback" style="display:none;">
+      <div class="section-header">🔙 この日の振り返り</div>
+      <div class="section-body" id="lookbackList"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">🔥 30日ストリーク</div>
+      <div class="streak-grid" id="streakGrid"></div>
+    </div>
+
+    <a id="sheetLink" class="sheet-link" target="_blank" rel="noopener" style="display:none;">📊 スプレッドシートを開く</a>
+  </div>
+
+</div>
+
+<!-- タブバー -->
+<nav class="tab-bar">
+  <a href="?p=" class="tab-item active">
+    <span class="tab-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>Home
+  </a>
+  <a href="?p=books" class="tab-item">
+    <span class="tab-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span>読書
+  </a>
+  <a href="?p=chat" class="tab-item">
+    <span class="tab-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>Chat
+  </a>
+</nav>
+
+<!-- Todo編集モーダル -->
+<div id="todoEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:400;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:20px;width:90%;max-width:480px;display:flex;flex-direction:column;gap:12px;">
+    <div style="font-weight:600;font-size:15px;">ToDoを編集</div>
+    <input type="hidden" id="todoEditId">
+    <input type="text" id="todoEditText" placeholder="タスク内容">
+    <input type="text" id="todoEditTag" placeholder="タグ（任意）">
+    <div style="display:flex;gap:6px;align-items:center;">
+      <span style="font-size:12px;color:var(--muted);">期限:</span>
+      <input type="date" id="todoEditDue" style="flex:1;">
+    </div>
+    <div style="display:flex;gap:6px;">
+      <button class="priority-btn todo-edit-priority" data-priority="high" onclick="selectTodoEditPriority('high')">🔴 高</button>
+      <button class="priority-btn todo-edit-priority selected" data-priority="mid" onclick="selectTodoEditPriority('mid')">🟡 普通</button>
+      <button class="priority-btn todo-edit-priority" data-priority="low" onclick="selectTodoEditPriority('low')">🔵 低</button>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn-submit todo-mode" onclick="saveTodoEdit()">保存</button>
+      <button class="btn-submit" onclick="closeTodoEdit()" style="background:#aaa;">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ==============================
+// 状態
+// ==============================
+var mode = 'diary';
+var selectedMood = null;
+var selectedPriority = 'mid';
+var recognition = null;
+var isRecording = false;
+var topTags = [];
+var MOODS = { 1: '😢', 2: '😞', 3: '😐', 4: '🙂', 5: '😊', 6: '🤩' };
+
+// ==============================
+// 初期化
+// ==============================
+document.addEventListener('DOMContentLoaded', function() {
+  setNow();
+  loadDashboard();
+  loadTopTags();
+  loadSheetLink();
+});
+
+// ==============================
+// スプレッドシートリンク
+// ==============================
+function loadSheetLink() {
+  google.script.run.withSuccessHandler(function(settings) {
+    var url = settings['spreadsheet_url'];
+    if (url) {
+      var el = document.getElementById('sheetLink');
+      el.href = url;
+      el.style.display = '';
+    }
+  }).getSettings();
+}
+
+// ==============================
+// 日時
+// ==============================
+function setNow() {
+  var now = new Date();
+  var local = new Date(now - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  document.getElementById('datetimeInput').value = local;
+}
+
+// ==============================
+// モード切替
+// ==============================
+function setMode(m) {
+  mode = m;
+  document.getElementById('diaryBtn').className = m === 'diary' ? 'mode-btn active' : 'mode-btn';
+  document.getElementById('todoBtn').className = m === 'todo' ? 'mode-btn todo-active' : 'mode-btn';
+  document.getElementById('moodRow').style.display = m === 'diary' ? '' : 'none';
+  document.getElementById('todoOptions').style.display = m === 'todo' ? '' : 'none';
+  document.getElementById('submitBtn').className = m === 'todo' ? 'btn-submit todo-mode' : 'btn-submit';
+}
+
+// ==============================
+// Mood
+// ==============================
+function selectMood(v) {
+  selectedMood = v;
+  document.querySelectorAll('.mood-btn').forEach(function(btn) {
+    btn.classList.toggle('selected', parseInt(btn.dataset.mood) === v);
+  });
+}
+
+// ==============================
+// Priority
+// ==============================
+function selectPriority(p) {
+  selectedPriority = p;
+  document.querySelectorAll('#todoOptions .priority-btn').forEach(function(btn) {
+    btn.classList.toggle('selected', btn.dataset.priority === p);
+  });
+}
+
+// ==============================
+// タグ
+// ==============================
+function loadTopTags() {
+  google.script.run.withSuccessHandler(function(data) {
+    topTags = (data.tags || []).slice(0, 5);
+    renderTopTags();
+  }).getTagSuggest('');
+}
+
+function renderTopTags() {
+  var el = document.getElementById('tagSuggestions');
+  el.innerHTML = topTags.map(function(t) {
+    return '<button class="tag-chip" onclick="setTag(\'' + escHtml(t.tag) + '\')">' + escHtml(t.tag) + '</button>';
+  }).join('');
+}
+
+function setTag(tag) {
+  document.getElementById('tagInput').value = tag;
+  hideTagDropdown();
+}
+
+var tagDebounce;
+function onTagInput() {
+  clearTimeout(tagDebounce);
+  var q = document.getElementById('tagInput').value;
+  if (!q) { hideTagDropdown(); return; }
+  tagDebounce = setTimeout(function() {
+    google.script.run.withSuccessHandler(function(data) {
+      showTagDropdown(data.tags || []);
+    }).getTagSuggest(q);
+  }, 200);
+}
+
+function showTagDropdown(tags) {
+  var el = document.getElementById('tagDropdown');
+  if (!tags.length) { hideTagDropdown(); return; }
+  el.innerHTML = tags.map(function(t) {
+    return '<div class="tag-dropdown-item" onclick="setTag(\'' + escHtml(t.tag) + '\')">' + escHtml(t.tag) + '</div>';
+  }).join('');
+  el.style.display = 'block';
+}
+
+function hideTagDropdown() {
+  document.getElementById('tagDropdown').style.display = 'none';
+}
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.tag-row')) hideTagDropdown();
+});
+
+// ==============================
+// 音声入力
+// ==============================
+function toggleVoice() {
+  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+    showToast('このブラウザは音声入力に対応していません');
+    return;
+  }
+  if (isRecording) { recognition.stop(); return; }
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang = 'ja-JP';
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.onstart = function() {
+    isRecording = true;
+    document.getElementById('voiceBtn').classList.add('recording');
+  };
+  recognition.onresult = function(e) {
+    document.getElementById('textInput').value += e.results[0][0].transcript;
+  };
+  recognition.onend = function() {
+    isRecording = false;
+    document.getElementById('voiceBtn').classList.remove('recording');
+  };
+  recognition.onerror = function() {
+    isRecording = false;
+    document.getElementById('voiceBtn').classList.remove('recording');
+    showToast('音声認識エラー');
+  };
+  recognition.start();
+}
+
+// ==============================
+// 記録送信
+// ==============================
+function submit() {
+  var datetime = document.getElementById('datetimeInput').value;
+  var text = document.getElementById('textInput').value.trim();
+  var tag = document.getElementById('tagInput').value.trim() || null;
+
+  if (!datetime) { showToast('日時を入力してください'); return; }
+  if (!text) { showToast('テキストを入力してください'); return; }
+
+  var btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = '保存中…';
+
+  if (mode === 'diary') {
+    google.script.run
+      .withSuccessHandler(function() {
+        showToast('📝 記録しました！');
+        resetForm();
+        loadDashboard();
+        loadTopTags();
+      })
+      .withFailureHandler(function(e) {
+        showToast('エラー: ' + e.message);
+        btn.disabled = false;
+        btn.textContent = '記録する';
+      })
+      .saveEntry({ datetime: datetime, mood: selectedMood, tag: tag, text: text });
+  } else {
+    var due = document.getElementById('dueDate').value || null;
+    google.script.run
+      .withSuccessHandler(function() {
+        showToast('☑ ToDoを追加しました！');
+        resetForm();
+        loadDashboard();
+        loadTopTags();
+      })
+      .withFailureHandler(function(e) {
+        showToast('エラー: ' + e.message);
+        btn.disabled = false;
+        btn.textContent = '記録する';
+      })
+      .saveTodo({ datetime: datetime, text: text, tag: tag, priority: selectedPriority, due: due });
+  }
+}
+
+function resetForm() {
+  document.getElementById('textInput').value = '';
+  document.getElementById('tagInput').value = '';
+  document.getElementById('dueDate').value = '';
+  setNow();
+  selectedMood = null;
+  document.querySelectorAll('.mood-btn').forEach(function(b) { b.classList.remove('selected'); });
+  var btn = document.getElementById('submitBtn');
+  btn.disabled = false;
+  btn.textContent = '記録する';
+}
+
+// ==============================
+// ダッシュボード
+// ==============================
+function loadDashboard() {
+  google.script.run
+    .withSuccessHandler(function(data) {
+      renderDailySummary(data.summary, data.today);
+      renderCalendar(data.calendarEvents);
+      renderTodayEntries(data.todayEntries);
+      renderTodos(data.openTodos);
+      renderRecentDone(data.recentDone);
+      renderLookback(data.lookback);
+      renderStreak(data.streakData, data.today);
+    })
+    .withFailureHandler(function(e) {
+      console.error('Dashboard error:', e);
+    })
+    .getDashboard();
+}
+
+// ==============================
+// 日次概要カード
+// ==============================
+function renderDailySummary(summary, today) {
+  var card = document.getElementById('dailySummaryCard');
+  if (!card || !summary) return;
+
+  var moodEmoji = summary.todayAvgMood ? (MOODS[Math.round(summary.todayAvgMood)] || '') : '';
+  var items = [];
+
+  if (summary.openCount > 0 || summary.todayDoneCount > 0) {
+    var taskText = '';
+    if (summary.todayDoneCount > 0) taskText += '✅ ' + summary.todayDoneCount + '件完了';
+    if (summary.openCount > 0) taskText += (taskText ? ' / ' : '') + '📋 残り' + summary.openCount + '件';
+    items.push(taskText);
+  }
+  if (summary.overdueCount > 0) {
+    items.push('<span style="color:#c53030;">🚨 期限超過 ' + summary.overdueCount + '件</span>');
+  }
+  if (moodEmoji) items.push('今日の気分: ' + moodEmoji);
+  if (summary.streakCount > 0) items.push('🔥 ' + summary.streakCount + '日連続記録中！');
+
+  card.style.display = '';
+  var WEEKDAYS = ['日','月','火','水','木','金','土'];
+  var dateLabel = '';
+  if (today) {
+    var d = new Date(today + 'T00:00:00');
+    dateLabel = (d.getMonth() + 1) + '/' + d.getDate() + ' (' + WEEKDAYS[d.getDay()] + ')';
+  }
+
+  var piaMsg = '';
+  if (!summary.todayEntryCount || summary.todayEntryCount === 0) {
+    piaMsg = 'まだなにも書いてないよ〜✏️';
+  } else if (summary.openCount === 0 && summary.todayDoneCount > 0) {
+    piaMsg = '全部おわったの！すごい〜！🎉';
+  } else if (summary.todayAvgMood && summary.todayAvgMood >= 5) {
+    piaMsg = 'いい日だね〜！☀️';
+  } else if (summary.streakCount >= 3) {
+    piaMsg = summary.streakCount + '日連続だよ！えらい〜🔥';
+  } else {
+    piaMsg = 'きょうもがんばってるね〜🐾';
+  }
+
+  card.innerHTML = '<div class="pia-comment" style="margin-bottom:0;">' +
+    '<span class="pia-icon-emoji">🐾</span>' +
+    '<div class="pia-bubble">' + piaMsg + '</div>' +
+    '<span style="margin-left:auto;font-size:11px;color:var(--text-sub);white-space:nowrap;">' + dateLabel + '</span>' +
+    '</div>' +
+    (items.length ? '<div style="font-size:13px;color:var(--text-main);display:flex;flex-direction:column;gap:4px;padding-top:8px;">' +
+      items.map(function(i) { return '<div>' + i + '</div>'; }).join('') + '</div>' : '');
+}
+
+// ==============================
+// カレンダー
+// ==============================
+function renderCalendar(events) {
+  var section = document.getElementById('sectionCalendar');
+  var el = document.getElementById('calendarList');
+  if (!events || events.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = '';
+  var today = new Date().toISOString().slice(0, 10);
+  var html = '';
+  var lastDate = '';
+  events.forEach(function(ev) {
+    if (ev.date !== lastDate) {
+      lastDate = ev.date;
+      var label = ev.date === today ? '今日' : '明日';
+      html += '<div class="cal-date-label">' + label + '</div>';
+    }
+    var time = ev.allDay ? '終日' : ev.startTime + (ev.endTime ? '〜' + ev.endTime : '');
+    html += '<div class="cal-event"><span class="cal-time">' + time + '</span><span class="cal-title">' + escHtml(ev.title) + '</span></div>';
+  });
+  el.innerHTML = html;
+}
+
+// ==============================
+// 今日の記録
+// ==============================
+function renderTodayEntries(entries) {
+  var el = document.getElementById('todayList');
+  document.getElementById('todayCount').textContent = entries.length ? entries.length + '件' : '';
+  if (!entries.length) {
+    el.innerHTML = '<div class="empty-state"><p>🐾 まだなにも書いてないよ〜<br>なにか書いてみる？</p></div>';
+    return;
+  }
+  el.innerHTML = entries.map(function(e) {
+    var dt = String(e.datetime || '');
+    return '<div class="entry-item">' +
+      '<div class="entry-time">' + dt.slice(11, 16) + '</div>' +
+      '<div class="entry-mood">' + (e.mood ? MOODS[e.mood] : '') + '</div>' +
+      '<div class="entry-content">' +
+      (e.tag ? '<div class="entry-tag">#' + escHtml(String(e.tag)) + '</div>' : '') +
+      '<div class="entry-text">' + escHtml(String(e.text || '')).replace(/\n/g, '<br>') + '</div>' +
+      '</div></div>';
+  }).join('');
+}
+
+// ==============================
+// ToDo一覧
+// ==============================
+function renderTodos(todos) {
+  var el = document.getElementById('todoList');
+  document.getElementById('todoCount').textContent = todos.length ? todos.length + '件' : '';
+  if (!todos.length) {
+    el.innerHTML = '<div class="empty-state"><p>🌸 やることはないよ！<br>のんびりしよ〜</p></div>';
+    return;
+  }
+  var today = new Date().toISOString().slice(0, 10);
+  el.innerHTML = todos.map(function(t) {
+    var overdue = t.due && String(t.due) < today;
+    var priority = t.priority || 'mid';
+    var priorityLabel = { high: '高', mid: '普通', low: '低' }[priority] || '普通';
+    var td = encodeURIComponent(JSON.stringify(t));
+    return '<div class="todo-item' + (overdue ? ' overdue-item' : '') + '">' +
+      '<div class="todo-check" onclick="completeTodoAction(\'' + t.id + '\', this.closest(\'.todo-item\'))"></div>' +
+      '<div class="todo-content" onclick="completeTodoAction(\'' + t.id + '\', this.closest(\'.todo-item\'))">' +
+      '<div class="todo-text">' + escHtml(String(t.text || '')) + '</div>' +
+      '<div class="todo-meta' + (overdue ? ' overdue' : '') + '">' +
+      (t.due ? '📅 ' + t.due + (overdue ? ' 期限超過！' : '') : '') +
+      (t.tag ? ' #' + escHtml(String(t.tag)) : '') +
+      '</div></div>' +
+      '<div class="priority-badge ' + priority + '"><span class="priority-dot"></span>' + priorityLabel + '</div>' +
+      '<button class="edit-btn" onclick="openTodoEdit(decodeURIComponent(\'' + td + '\'))" title="編集">✏️</button>' +
+      '</div>';
+  }).join('');
+}
+
+// ==============================
+// ToDo完了
+// ==============================
+function completeTodoAction(id, el) {
+  el.style.opacity = '0.5';
+  google.script.run
+    .withSuccessHandler(function() {
+      showToast('✅ 完了！');
+      loadDashboard();
+    })
+    .withFailureHandler(function(e) {
+      el.style.opacity = '1';
+      showToast('エラー: ' + e.message);
+    })
+    .completeTodo(id);
+}
+
+function reopenTodoAction(id, el) {
+  el.style.opacity = '0.5';
+  google.script.run
+    .withSuccessHandler(function() {
+      showToast('↩ 復帰しました');
+      loadDashboard();
+    })
+    .withFailureHandler(function(e) {
+      el.style.opacity = '1';
+      showToast('エラー: ' + e.message);
+    })
+    .reopenTodo(id);
+}
+
+// ==============================
+// 最近の完了
+// ==============================
+function renderRecentDone(todos) {
+  var el = document.getElementById('doneList');
+  if (!todos.length) {
+    el.innerHTML = '<div class="empty-msg">まだ完了したToDoはありません</div>';
+    return;
+  }
+  el.innerHTML = todos.map(function(t) {
+    return '<div class="done-item">' +
+      '<span class="done-check">✅</span>' +
+      '<span class="done-text">' + escHtml(String(t.text || '')) + '</span>' +
+      '<button class="reopen-btn" onclick="reopenTodoAction(\'' + t.id + '\', this.closest(\'.done-item\'))" title="復帰">↩</button>' +
+      '</div>';
+  }).join('');
+}
+
+// ==============================
+// 振り返り
+// ==============================
+function renderLookback(entries) {
+  var section = document.getElementById('sectionLookback');
+  var el = document.getElementById('lookbackList');
+  if (!entries || !entries.length) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = '';
+  el.innerHTML = entries.map(function(e) {
+    var dt = String(e.datetime || '');
+    return '<div class="lookback-item">' +
+      '<div class="lookback-date">' + dt.slice(0, 10) + ' ' + (e.mood ? MOODS[e.mood] : '') + '</div>' +
+      '<div>' + escHtml(String(e.text || '')).replace(/\n/g, '<br>') + '</div>' +
+      '</div>';
+  }).join('');
+}
+
+// ==============================
+// ストリーク
+// ==============================
+function renderStreak(data, today) {
+  var el = document.getElementById('streakGrid');
+  var map = {};
+  (data || []).forEach(function(d) { map[d.date] = d.count; });
+  var cells = [];
+  for (var i = 29; i >= 0; i--) {
+    var d = new Date(today + 'T00:00:00Z');
+    d.setUTCDate(d.getUTCDate() - i);
+    var key = d.toISOString().slice(0, 10);
+    cells.push('<div class="streak-cell' + (map[key] ? ' has-entry' : '') + '" title="' + key + '"></div>');
+  }
+  el.innerHTML = cells.join('');
+}
+
+// ==============================
+// Todo編集モーダル
+// ==============================
+function openTodoEdit(todoJson) {
+  var t = JSON.parse(todoJson);
+  document.getElementById('todoEditId').value = t.id;
+  document.getElementById('todoEditText').value = t.text || '';
+  document.getElementById('todoEditTag').value = t.tag || '';
+  document.getElementById('todoEditDue').value = t.due || '';
+  document.querySelectorAll('.todo-edit-priority').forEach(function(btn) {
+    btn.classList.toggle('selected', btn.dataset.priority === (t.priority || 'mid'));
+  });
+  document.getElementById('todoEditModal').style.display = 'flex';
+}
+
+function closeTodoEdit() {
+  document.getElementById('todoEditModal').style.display = 'none';
+}
+
+function saveTodoEdit() {
+  var id = document.getElementById('todoEditId').value;
+  var text = document.getElementById('todoEditText').value.trim();
+  var tag = document.getElementById('todoEditTag').value.trim() || null;
+  var due = document.getElementById('todoEditDue').value || null;
+  var priority = 'mid';
+  var sel = document.querySelector('.todo-edit-priority.selected');
+  if (sel) priority = sel.dataset.priority;
+
+  google.script.run
+    .withSuccessHandler(function() {
+      showToast('✅ 更新しました');
+      closeTodoEdit();
+      loadDashboard();
+    })
+    .withFailureHandler(function(e) {
+      showToast('エラー: ' + e.message);
+    })
+    .updateTodo({ id: id, text: text, tag: tag, due: due, priority: priority });
+}
+
+function selectTodoEditPriority(p) {
+  document.querySelectorAll('.todo-edit-priority').forEach(function(btn) {
+    btn.classList.toggle('selected', btn.dataset.priority === p);
+  });
+}
+
+// ==============================
+// Toast
+// ==============================
+var toastTimer;
+function showToast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() { el.classList.remove('show'); }, 2000);
+}
+
+// ==============================
+// Utility
+// ==============================
+function escHtml(str) {
+  return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+</script>
+</body>
+</html>

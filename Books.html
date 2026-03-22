@@ -426,6 +426,28 @@
     <button class="filter-tab" id="book-tab-done" onclick="setBookFilter('done')">✅ 読了</button>
   </div>
 
+  <!-- 媒体フィルター -->
+  <div class="filter-tabs" id="mediumFilterTabs" style="margin-top:4px;">
+    <button class="filter-tab active" id="medium-tab-all" onclick="setMediumFilter('all')">全媒体</button>
+    <button class="filter-tab" id="medium-tab-owned" onclick="setMediumFilter('owned')">📖 蔵書</button>
+    <button class="filter-tab" id="medium-tab-library" onclick="setMediumFilter('library')">🏛 図書館</button>
+    <button class="filter-tab" id="medium-tab-kindle" onclick="setMediumFilter('kindle')">📱 Kindle</button>
+    <button class="filter-tab" id="medium-tab-Audible" onclick="setMediumFilter('Audible')">🎧 Audible</button>
+  </div>
+
+  <!-- ソート＆検索 -->
+  <div style="display:flex;gap:8px;padding:8px 16px;align-items:center;">
+    <select id="bookSort" onchange="loadRecentBooks()" style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius-chip);font-size:12px;background:#fff;">
+      <option value="datetime_desc">登録日（新しい順）</option>
+      <option value="datetime_asc">登録日（古い順）</option>
+      <option value="title">あいうえお順</option>
+    </select>
+    <div style="flex:1;position:relative;">
+      <input type="text" id="bookSearchInput" placeholder="タイトル・著者・メモで検索…"
+             oninput="debounceSearch()" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius-chip);font-size:12px;">
+    </div>
+  </div>
+
   <!-- 読書一覧 -->
   <div class="book-list" id="recentBooks"><div class="loading"><span class="spinner"></span> 読み込み中…</div></div>
 
@@ -519,6 +541,8 @@ var selectedRating = 0;
 var noteRecognition = null;
 var isNoteRecording = false;
 var currentBookFilter = 'all';
+var currentMediumFilter = 'all';
+var searchTimer = null;
 var editRating = 0;
 
 // ==============================
@@ -704,11 +728,27 @@ function setBookFilter(status) {
   loadRecentBooks();
 }
 
+function setMediumFilter(medium) {
+  currentMediumFilter = medium;
+  document.querySelectorAll('#mediumFilterTabs .filter-tab').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('medium-tab-' + medium).classList.add('active');
+  loadRecentBooks();
+}
+
+function debounceSearch() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(function() { loadRecentBooks(); }, 300);
+}
+
 // ==============================
 // 読書一覧
 // ==============================
 function loadRecentBooks() {
   document.getElementById('recentBooks').innerHTML = '<div class="loading"><span class="spinner"></span> 読み込み中…</div>';
+  var sortEl = document.getElementById('bookSort');
+  var sortVal = sortEl ? sortEl.value : 'datetime_desc';
+  var searchEl = document.getElementById('bookSearchInput');
+  var searchVal = searchEl ? searchEl.value.trim() : '';
   google.script.run
     .withSuccessHandler(function(data) {
       renderRecentBooks(data.books || []);
@@ -716,7 +756,7 @@ function loadRecentBooks() {
     .withFailureHandler(function() {
       document.getElementById('recentBooks').innerHTML = '<div class="empty-msg">読み込みに失敗しました</div>';
     })
-    .getRecentBooks(100, currentBookFilter);
+    .getRecentBooks(500, currentBookFilter, currentMediumFilter, sortVal, searchVal || null);
 }
 
 function renderRecentBooks(books) {

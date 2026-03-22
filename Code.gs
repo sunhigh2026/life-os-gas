@@ -617,15 +617,43 @@ function deleteBook(id) {
   return { id: id, deleted: true };
 }
 
-function getRecentBooks(limit, statusFilter) {
+function getRecentBooks(limit, statusFilter, mediumFilter, sort, search) {
   var data = getSheetData_('books');
+
+  // ステータスフィルタ
   if (statusFilter && statusFilter !== 'all') {
     data = data.filter(function(b) { return b.status === statusFilter; });
   }
-  data.sort(function(a, b) {
-    return String(b.datetime || '').localeCompare(String(a.datetime || ''));
-  });
-  return { books: data.slice(0, limit || 100) };
+
+  // 媒体フィルタ
+  if (mediumFilter && mediumFilter !== 'all') {
+    data = data.filter(function(b) {
+      return b.medium && String(b.medium).toLowerCase() === String(mediumFilter).toLowerCase();
+    });
+  }
+
+  // 検索
+  if (search) {
+    var q = search.toLowerCase();
+    data = data.filter(function(b) {
+      return (b.title && String(b.title).toLowerCase().indexOf(q) >= 0) ||
+             (b.author && String(b.author).toLowerCase().indexOf(q) >= 0) ||
+             (b.note && String(b.note).toLowerCase().indexOf(q) >= 0);
+    });
+  }
+
+  // ソート
+  var sortKey = sort || 'datetime_desc';
+  if (sortKey === 'datetime_asc') {
+    data.sort(function(a, b) { return String(a.datetime || '').localeCompare(String(b.datetime || '')); });
+  } else if (sortKey === 'title') {
+    data.sort(function(a, b) { return String(a.title || '').localeCompare(String(b.title || '')); });
+  } else {
+    // datetime_desc (default)
+    data.sort(function(a, b) { return String(b.datetime || '').localeCompare(String(a.datetime || '')); });
+  }
+
+  return { books: data.slice(0, limit || 500) };
 }
 
 // ==============================
